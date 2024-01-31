@@ -42,6 +42,54 @@ see below.
 
     modprobe zfs
 
+   Secure Boot:
+   If you have the following error message, then you might have Secure Boot enabled::
+
+    ERROR: could not insert 'zfs': Key was rejected by service
+
+   On an UEFI system with Secure Boot enabled, modules require signing before they can be loaded and the firmware of the system must know the correct public certificate to verify the module signature.
+
+   For importing the MOK certificate make sure mokutil is installed.
+
+   To check if Secure Boot is enabled::
+
+    # mokutil --sb-state
+    
+    SecureBoot enabled
+
+   With the appropriate key material on the system, enroll the public key::
+
+    # mokutil --import /var/lib/dkms/mok.pub"
+    
+    You'll be prompted to create a password. Enter it twice, it can also be blank.
+
+   Reboot the computer. At boot you'll see the MOK Manager EFI interface::
+
+    Press any key to enter it, then select "Enroll MOK"
+
+    Then select "Continue"
+
+    And confirm with "Yes" when prompted
+
+    After this, enter the password you set up with mokutil --import in the previous step
+
+   At this point you are done, select "OK" and the computer will reboot trusting the key for your modules
+
+   After reboot, you can inspect the MOK certificates with the following command::
+
+    # mokutil --list-enrolled | grep DKMS
+   
+    Subject: CN=DKMS module signing key
+   
+   To check the signature on a built DKMS module that is installed on a system::
+
+    # modinfo dkms_test | grep ^signer
+    signer:         DKMS module signing key
+   The module can now be loaded without issues.
+
+
+
+
    If kernel module can not be loaded, your kernel version
    might be not yet supported by OpenZFS.
 
